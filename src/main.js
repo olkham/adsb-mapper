@@ -70,6 +70,7 @@ const listFilter = $('list-filter');
 function applyReceiver() {
   const p = parseLatLon(config.receiver);
   map.setReceiver(p?.lat, p?.lon);
+  map.centerOnReceiver();
 }
 
 function handleSelect(ac) {

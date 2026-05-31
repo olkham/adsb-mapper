@@ -332,11 +332,17 @@ button.primary { background: var(--accent); color: #04243a; border-color: var(--
   background: var(--panel) !important;
   color: var(--text) !important;
   border: 1px solid var(--panel-border) !important;
-  border-radius: 8px !important;
+  border-radius: 4px !important;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4) !important;
 }
 .leaflet-control-layers-toggle {
   background-color: var(--panel) !important;
+  width: 30px !important;
+  height: 30px !important;
+  background-size: 16px 16px !important;
+  background-position: center !important;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e6eef7' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpolygon points='12 2 22 8.5 12 15 2 8.5 12 2'/%3E%3Cpolyline points='2 15.5 12 22 22 15.5'/%3E%3C/svg%3E") !important;
+  border-radius: 3px !important;
 }
 .leaflet-control-layers label { font-size: 12px; }
 .leaflet-control-layers-expanded { padding: 8px 10px !important; }

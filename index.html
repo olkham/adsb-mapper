@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ADS-B Mapper</title>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <!-- Top-left HUD: connection + title -->
+    <div id="hud" class="panel">
+      <div class="hud-row">
+        <span id="conn-dot" class="dot dot-off" title="Disconnected"></span>
+        <strong>ADS-B Mapper</strong>
+        <button id="settings-btn" class="icon-btn" title="Connection settings">⚙</button>
+      </div>
+    </div>
+
+    <!-- Connection settings -->
+    <div id="settings" class="panel settings hidden">
+      <h3>MQTT Connection<button id="cfg-close" class="close" title="Close">×</button></h3>
+      <label>
+        WebSocket URL
+        <input id="cfg-url" type="text" placeholder="ws://localhost:9001" />
+      </label>
+      <label>
+        Topic prefix
+        <input id="cfg-prefix" type="text" placeholder="adsb" />
+      </label>
+      <label>
+        Username (optional)
+        <input id="cfg-user" type="text" autocomplete="off" />
+      </label>
+      <label>
+        Password (optional)
+        <input id="cfg-pass" type="password" autocomplete="off" />
+      </label>
+      <label class="checkbox">
+        <input id="cfg-trail-all" type="checkbox" />
+        Draw trails for all aircraft (uncheck = selected only)
+      </label>
+      <label>
+        Receiver location (lat, lon)
+        <input id="cfg-receiver" type="text" placeholder="54.8506, -1.6018" />
+      </label>
+      <div class="settings-actions">
+        <button id="cfg-connect" class="primary">Connect</button>
+        <button id="cfg-reset" title="Clear saved settings and use the .env defaults">Reset</button>
+        <button id="cfg-cancel">Cancel</button>
+      </div>
+      <p id="conn-msg" class="conn-msg"></p>
+    </div>
+
+    <!-- Selected aircraft info -->
+    <div id="info" class="panel info hidden"></div>
+
+    <!-- Aircraft list -->
+    <div id="aircraft-panel" class="panel list-panel">
+      <div class="list-header">
+        <strong>Aircraft</strong>
+        <span id="list-count" class="list-count">0</span>
+        <input id="list-filter" type="text" placeholder="filter…" />
+      </div>
+      <div id="aircraft-list" class="list-body"></div>
+      <div class="legend-inline">
+        <span class="legend-title">Altitude (ft)</span>
+        <div class="legend-bar"></div>
+        <div class="legend-ticks">
+          <span>0</span><span>10k</span><span>20k</span><span>30k</span><span>40k+</span>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

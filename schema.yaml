@@ -1,0 +1,501 @@
+asyncapi: "2.6.0"
+
+info:
+  title: adsb2mqtt
+  version: "1.0.0"
+  description: |
+    ADS-B aircraft state published to MQTT by adsb2mqtt.
+
+    ## Topic layout
+
+    | Topic pattern                             | Retained | Payload     |
+    |-------------------------------------------|----------|-------------|
+    | `adsb/aircraft/{icao24}/{field}`          | yes      | plain string |
+    | `adsb/aircraft/{icao24}/raw/{field}`      | yes      | plain string |
+    | `adsb/stats`                              | no       | JSON object  |
+    | `adsb/events/appeared`                    | no       | JSON object  |
+    | `adsb/events/disappeared`                 | no       | JSON object  |
+
+    Aircraft state is published as **individual retained per-field subtopics**
+    rather than one big JSON blob. Every field value is serialised to a plain
+    string (numbers, booleans, and arrays included). Subscribe to
+    `adsb/aircraft/+/#` to receive all aircraft updates, then use the final
+    path segment as the field name.
+
+    When an aircraft disappears its retained per-field topics are cleared by
+    publishing an empty payload to each one.
+
+    The default topic prefix is `adsb` and is configurable via
+    `MQTT_TOPIC_PREFIX`. All timestamps are ISO-8601 UTC.
+
+defaultContentType: text/plain
+
+servers:
+  broker:
+    url: "{host}:{port}"
+    protocol: mqtt
+    description: MQTT broker (configure via MQTT_HOST / MQTT_PORT env vars)
+    variables:
+      host:
+        default: localhost
+        description: Broker hostname or IP address
+      port:
+        default: "1883"
+        description: Broker port (use 8883 for TLS)
+
+# ─────────────────────────────────────────────────────────────────────────────
+channels:
+
+  # ── Enriched per-aircraft fields ──────────────────────────────────────────
+  adsb/aircraft/{icao24}/{field}:
+    description: |
+      One retained message per enriched field for an aircraft.
+      Cleared (empty payload) when the aircraft disappears.
+
+      Subscribe with `adsb/aircraft/+/+` for a specific field across all
+      aircraft, or `adsb/aircraft/ABC123/#` for all fields of one aircraft.
+    parameters:
+      icao24:
+        $ref: "#/components/parameters/icao24"
+      field:
+        description: Enriched field name (see AircraftField schema for the full list)
+        schema:
+          type: string
+          enum:
+            - icao24
+            - timestamp
+            - callsign
+            - squawk
+            - lat
+            - lon
+            - altitude_ft
+            - altitude_geom_ft
+            - ground_speed_kt
+            - true_heading
+            - track
+            - vertical_rate_fpm
+            - category
+            - nic
+            - nac_p
+            - messages
+            - rssi
+            - seen
+            - mlat
+            - tisb
+            - on_ground
+            - emergency
+            - altitude_m
+            - ground_speed_ms
+            - ground_speed_kmh
+            - range_km
+            - bearing_deg
+            - position_quality
+    subscribe:
+      summary: Receive per-field enriched aircraft state updates
+      operationId: receiveAircraftField
+      message:
+        $ref: "#/components/messages/AircraftField"
+
+  # ── Raw readsb per-aircraft fields ────────────────────────────────────────
+  adsb/aircraft/{icao24}/raw/{field}:
+    description: |
+      One retained message per raw readsb field for an aircraft.
+      These mirror the fields in readsb's aircraft.json exactly, with no
+      enrichment. Cleared (empty payload) when the aircraft disappears.
+    parameters:
+      icao24:
+        $ref: "#/components/parameters/icao24"
+      field:
+        description: Raw readsb field name (see RawAircraftField schema)
+        schema:
+          type: string
+          enum:
+            - hex
+            - flight
+            - squawk
+            - lat
+            - lon
+            - alt_baro
+            - alt_geom
+            - gs
+            - true_heading
+            - track
+            - baro_rate
+            - geom_rate
+            - category
+            - nic
+            - nac_p
+            - messages
+            - rssi
+            - seen
+            - mlat
+            - tisb
+    subscribe:
+      summary: Receive per-field raw readsb aircraft state
+      operationId: receiveRawAircraftField
+      message:
+        $ref: "#/components/messages/RawAircraftField"
+
+  # ── Aggregate stats ────────────────────────────────────────────────────────
+  adsb/stats:
+    description: |
+      Aggregate counts published every `PUBLISH_INTERVAL` seconds.
+      Not retained.
+    subscribe:
+      summary: Receive aggregate aircraft counts
+      operationId: receiveStats
+      message:
+        $ref: "#/components/messages/Stats"
+
+  # ── Appeared event ─────────────────────────────────────────────────────────
+  adsb/events/appeared:
+    description: |
+      Published once when an aircraft is seen for the first time (or after a
+      gap longer than AIRCRAFT_TIMEOUT). Not retained.
+    subscribe:
+      summary: Aircraft first seen
+      operationId: receiveAppeared
+      message:
+        $ref: "#/components/messages/AppearedEvent"
+
+  # ── Disappeared event ──────────────────────────────────────────────────────
+  adsb/events/disappeared:
+    description: |
+      Published once when an aircraft has not been heard from for longer than
+      AIRCRAFT_TIMEOUT seconds. Not retained.
+    subscribe:
+      summary: Aircraft lost
+      operationId: receiveDisappeared
+      message:
+        $ref: "#/components/messages/DisappearedEvent"
+
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+
+  parameters:
+    icao24:
+      description: 6-character ICAO 24-bit address (uppercase hex, e.g. 4CA7F2)
+      schema:
+        type: string
+        pattern: "^[0-9A-F]{6}$"
+        examples:
+          - "4CA7F2"
+          - "A12345"
+
+  messages:
+
+    # ── Individual enriched field ────────────────────────────────────────────
+    AircraftField:
+      name: AircraftField
+      contentType: text/plain
+      description: |
+        The value of a single enriched field serialised as a plain string.
+        Numeric fields (e.g. lat, altitude_ft) are decimal strings.
+        Boolean fields are "true" or "false".
+        Array fields (mlat, tisb) are compact JSON arrays, e.g. `["mlat"]`.
+        An empty payload means the field has been cleared (aircraft gone).
+      payload:
+        $ref: "#/components/schemas/AircraftRecord"
+
+    # ── Individual raw field ─────────────────────────────────────────────────
+    RawAircraftField:
+      name: RawAircraftField
+      contentType: text/plain
+      description: |
+        The value of a single raw readsb field serialised as a plain string.
+        An empty payload means the field has been cleared (aircraft gone).
+      payload:
+        $ref: "#/components/schemas/RawAircraftRecord"
+
+    # ── Stats ────────────────────────────────────────────────────────────────
+    Stats:
+      name: Stats
+      contentType: application/json
+      description: Aggregate counts for the current set of tracked aircraft.
+      payload:
+        $ref: "#/components/schemas/StatsPayload"
+
+    # ── Appeared event ───────────────────────────────────────────────────────
+    AppearedEvent:
+      name: AppearedEvent
+      contentType: application/json
+      description: Fired when an aircraft is seen for the first time.
+      payload:
+        $ref: "#/components/schemas/AircraftEventPayload"
+
+    # ── Disappeared event ────────────────────────────────────────────────────
+    DisappearedEvent:
+      name: DisappearedEvent
+      contentType: application/json
+      description: Fired when an aircraft stops being heard.
+      payload:
+        $ref: "#/components/schemas/AircraftEventPayload"
+
+  schemas:
+
+    # ── Enriched aircraft record (all optional – only present fields published) ──
+    AircraftRecord:
+      type: object
+      description: |
+        The complete set of enriched fields available per aircraft.
+        Each field is published individually as a plain-string subtopic;
+        this schema documents the logical record they collectively represent.
+        Fields are omitted when the value is null or unknown.
+      properties:
+        icao24:
+          type: string
+          pattern: "^[0-9A-F]{6}$"
+          description: ICAO 24-bit address (uppercase hex)
+          examples: ["4CA7F2"]
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO-8601 UTC time this record was generated
+          examples: ["2024-06-15T12:34:56Z"]
+        callsign:
+          type: string
+          description: Flight callsign / IATA flight number, stripped of whitespace
+          examples: ["BAW123", "EZY4521"]
+        squawk:
+          type: string
+          description: Mode A squawk code (4 octal digits)
+          pattern: "^[0-7]{4}$"
+          examples: ["1234", "7700"]
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+          description: WGS-84 latitude in decimal degrees
+        lon:
+          type: number
+          minimum: -180
+          maximum: 180
+          description: WGS-84 longitude in decimal degrees
+        altitude_ft:
+          description: Barometric altitude in feet, or the string "ground"
+          oneOf:
+            - type: number
+            - type: string
+              const: ground
+          examples: [35000, "ground"]
+        altitude_geom_ft:
+          type: number
+          description: Geometric (GPS) altitude in feet
+        altitude_m:
+          type: number
+          description: Barometric altitude converted to metres (derived)
+        ground_speed_kt:
+          type: number
+          minimum: 0
+          description: Ground speed in knots
+        ground_speed_ms:
+          type: number
+          minimum: 0
+          description: Ground speed in metres per second (derived)
+        ground_speed_kmh:
+          type: number
+          minimum: 0
+          description: Ground speed in kilometres per hour (derived)
+        true_heading:
+          type: number
+          minimum: 0
+          maximum: 360
+          description: True heading in degrees (0–360)
+        track:
+          type: number
+          minimum: 0
+          maximum: 360
+          description: Track angle over the ground in degrees (0–360)
+        vertical_rate_fpm:
+          type: number
+          description: Vertical rate in feet per minute (positive = climbing). Barometric preferred, geometric fallback.
+        on_ground:
+          type: boolean
+          description: True when alt_baro is reported as "ground" by readsb
+        category:
+          type: string
+          description: ADS-B emitter category (A0–D7)
+          examples: ["A3", "B1"]
+        nic:
+          type: integer
+          minimum: 0
+          maximum: 11
+          description: Navigation Integrity Category (0 = unknown, 11 = highest)
+        nac_p:
+          type: integer
+          minimum: 0
+          maximum: 11
+          description: Navigation Accuracy Category – Position
+        messages:
+          type: integer
+          minimum: 0
+          description: Total Mode S messages received from this aircraft
+        rssi:
+          type: number
+          description: Signal strength in dBFS (negative; closer to 0 = stronger)
+          examples: [-15.2]
+        seen:
+          type: number
+          minimum: 0
+          description: Seconds since the last message was received
+        mlat:
+          type: array
+          description: List of fields derived via multilateration (empty = none)
+          items:
+            type: string
+          examples: [["lat", "lon", "track"]]
+        tisb:
+          type: array
+          description: List of fields received via TIS-B rebroadcast (empty = none)
+          items:
+            type: string
+        emergency:
+          type: string
+          description: Emergency type derived from squawk (present only when squawk is 7500/7600/7700)
+          enum: ["hijack", "comms_failure", "emergency"]
+        range_km:
+          type: number
+          minimum: 0
+          description: Great-circle distance from the receiver in kilometres (only when STATION_LAT/LON are set)
+        bearing_deg:
+          type: number
+          minimum: 0
+          maximum: 360
+          description: Initial bearing from the receiver to the aircraft in degrees (only when STATION_LAT/LON are set)
+        position_quality:
+          type: string
+          description: Human-readable position quality derived from NIC (only when NIC is present)
+          enum: ["high", "medium", "low"]
+
+    # ── Raw readsb record ────────────────────────────────────────────────────
+    RawAircraftRecord:
+      type: object
+      description: |
+        Raw fields as provided by readsb in aircraft.json.
+        Only fields that exist in the source data are published.
+      properties:
+        hex:
+          type: string
+          description: ICAO 24-bit address (lowercase hex, may be prefixed with ~ for non-ICAO)
+          examples: ["4ca7f2", "~a12345"]
+        flight:
+          type: string
+          description: Flight callsign (padded with spaces to 8 chars by readsb)
+          examples: ["BAW123  "]
+        squawk:
+          type: string
+          description: Mode A squawk code
+          examples: ["1234"]
+        lat:
+          type: number
+          description: Latitude in decimal degrees
+        lon:
+          type: number
+          description: Longitude in decimal degrees
+        alt_baro:
+          description: Barometric altitude in feet or the string "ground"
+          oneOf:
+            - type: number
+            - type: string
+              const: ground
+        alt_geom:
+          type: number
+          description: Geometric altitude in feet
+        gs:
+          type: number
+          description: Ground speed in knots
+        true_heading:
+          type: number
+          description: True heading in degrees
+        track:
+          type: number
+          description: Track angle in degrees
+        baro_rate:
+          type: number
+          description: Barometric vertical rate in feet per minute
+        geom_rate:
+          type: number
+          description: Geometric vertical rate in feet per minute
+        category:
+          type: string
+          description: ADS-B emitter category
+        nic:
+          type: integer
+          description: Navigation Integrity Category
+        nac_p:
+          type: integer
+          description: Navigation Accuracy Category – Position
+        messages:
+          type: integer
+          description: Total messages received
+        rssi:
+          type: number
+          description: Signal strength in dBFS
+        seen:
+          type: number
+          description: Seconds since last message
+        mlat:
+          type: array
+          items:
+            type: string
+          description: Fields derived via multilateration
+        tisb:
+          type: array
+          items:
+            type: string
+          description: Fields received via TIS-B
+
+    # ── Stats payload ────────────────────────────────────────────────────────
+    StatsPayload:
+      type: object
+      required: [timestamp, total, airborne, on_ground, with_position, mlat, emergency]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO-8601 UTC time the stats snapshot was taken
+          examples: ["2024-06-15T12:34:56Z"]
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of active aircraft in this cycle
+        airborne:
+          type: integer
+          minimum: 0
+          description: Aircraft not reporting as on-ground
+        on_ground:
+          type: integer
+          minimum: 0
+          description: Aircraft reporting as on-ground
+        with_position:
+          type: integer
+          minimum: 0
+          description: Aircraft with a known latitude/longitude
+        mlat:
+          type: integer
+          minimum: 0
+          description: Aircraft with at least one field derived via multilateration
+        emergency:
+          type: integer
+          minimum: 0
+          description: Aircraft squawking an emergency code (7500/7600/7700)
+
+    # ── Appeared / disappeared event ─────────────────────────────────────────
+    AircraftEventPayload:
+      type: object
+      required: [icao24, timestamp]
+      properties:
+        icao24:
+          type: string
+          pattern: "^[0-9A-F]{6}$"
+          description: ICAO 24-bit address (uppercase hex)
+          examples: ["4CA7F2"]
+        callsign:
+          type: ["string", "null"]
+          description: Callsign at the time of the event, null if unknown
+          examples: ["BAW123", null]
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO-8601 UTC time of the event
+          examples: ["2024-06-15T12:34:56Z"]

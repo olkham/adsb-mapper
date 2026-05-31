@@ -1,0 +1,365 @@
+:root {
+  --bg: #0b1622;
+  --panel: rgba(16, 26, 38, 0.92);
+  --panel-border: rgba(120, 170, 220, 0.18);
+  --text: #e6eef7;
+  --muted: #93a6bd;
+  --accent: #38bdf8;
+  --accent-2: #fde047;
+  --ok: #34d399;
+  --off: #ef4444;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+  background: #0b1622;
+}
+
+/* Dark map tweaks */
+.leaflet-container {
+  background: #0b1622;
+}
+
+.panel {
+  position: absolute;
+  z-index: 1000;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+}
+
+.hidden { display: none !important; }
+
+/* HUD */
+#hud {
+  top: 12px;
+  left: 12px;
+  min-width: 220px;
+}
+
+.hud-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-row strong { flex: 1; }
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.icon-btn:hover { border-color: var(--accent); }
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-off { background: var(--off); box-shadow: 0 0 8px var(--off); }
+.dot-on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.dot-wait { background: var(--accent-2); box-shadow: 0 0 8px var(--accent-2); }
+
+/* Settings */
+.settings {
+  top: 12px;
+  left: 12px;
+  width: 280px;
+}
+.settings h3 { margin: 0 0 10px; font-size: 14px; display: flex; align-items: center; }
+.settings h3 .close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.settings h3 .close:hover { color: var(--text); }
+.settings label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.settings label.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings input[type="text"],
+.settings input[type="password"] {
+  width: 100%;
+  margin-top: 3px;
+  padding: 7px 8px;
+  background: #0c1828;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+.settings-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+button {
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: #12283f;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: #04243a; border-color: var(--accent); font-weight: 600; }
+.conn-msg { margin: 8px 0 0; color: var(--accent-2); min-height: 16px; }
+
+/* Info panel */
+.info {
+  bottom: 12px;
+  left: 12px;
+  width: 260px;
+  max-height: 60vh;
+  overflow: auto;
+}
+.info h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.info .swatch {
+  width: 12px; height: 12px; border-radius: 3px; display: inline-block;
+}
+.info table { width: 100%; border-collapse: collapse; }
+.info td { padding: 2px 0; vertical-align: top; }
+.info td.k { color: var(--muted); padding-right: 8px; white-space: nowrap; }
+.info .close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* Per-value + copy-all clipboard buttons */
+.info td.v { width: 100%; }
+.info .vwrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.info .vtext { user-select: text; }
+.info .copy {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  opacity: 0.3;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 0;
+  flex: 0 0 auto;
+}
+.info tr:hover .copy { opacity: 0.65; }
+.info .copy:hover { opacity: 1; color: var(--accent); }
+.info .copy.copied { opacity: 1; color: var(--ok); }
+.info-foot {
+  margin-top: 10px;
+  display: flex;
+}
+.copy-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 9px;
+  opacity: 0.85;
+}
+.copy-all:hover { opacity: 1; }
+.copy-all.copied { color: var(--ok); border-color: var(--ok); opacity: 1; }
+
+/* Altitude legend (merged into the aircraft panel) */
+.legend-inline {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--panel-border);
+}
+.legend-title { color: var(--muted); font-size: 11px; }
+.legend-bar {
+  height: 10px;
+  margin: 6px 0 4px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #ff4d4d, #ff9d00, #ffe000, #69d83a, #18b3ff, #9b6bff);
+}
+.legend-ticks {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* Aircraft list */
+.list-panel {
+  top: 12px;
+  right: 12px;
+  width: 232px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 6px;
+}
+.list-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.list-header strong { font-size: 13px; }
+.list-count {
+  color: var(--muted);
+  font-size: 11px;
+}
+#list-filter {
+  margin-left: auto;
+  width: 84px;
+  padding: 3px 6px;
+  background: #0c1828;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11px;
+}
+.list-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.list-row:hover { background: rgba(120, 170, 220, 0.12); }
+.list-row.selected { background: rgba(56, 189, 248, 0.22); }
+.list-row.stale { opacity: 0.55; }
+.list-row .row-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.list-row .row-call {
+  font-weight: 600;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.list-row .row-meta {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.list-empty {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 6px;
+  text-align: center;
+}
+
+/* Receiver marker */
+.receiver-icon { filter: drop-shadow(0 0 4px rgba(56, 240, 208, 0.6)); }
+
+/* "Light" base map dimmed so aircraft and tracks stay clearly visible */
+.light-tiles { filter: brightness(0.72) saturate(0.92) contrast(0.96); }
+
+/* Map controls (zoom / centre / layers) themed to match, grouped lower-right */
+.leaflet-bar {
+  border: 1px solid var(--panel-border) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4) !important;
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid var(--panel-border) !important;
+}
+.leaflet-bar a:hover { color: var(--accent) !important; }
+.center-control a { line-height: 0; }
+.leaflet-bar a svg { vertical-align: middle; }
+
+/* Leaflet layers control (dark theme) */
+.leaflet-control-layers {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4) !important;
+}
+.leaflet-control-layers-toggle {
+  background-color: var(--panel) !important;
+}
+.leaflet-control-layers label { font-size: 12px; }
+.leaflet-control-layers-expanded { padding: 8px 10px !important; }
+
+/* Plane marker */
+.plane-icon {
+  will-change: transform;
+}.plane-icon svg { display: block; }
+.plane-label {
+  position: absolute;
+  left: 14px;
+  top: -2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.plane-icon.selected svg { filter: drop-shadow(0 0 4px #fff); }
+
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: var(--muted) !important;
+}
+.leaflet-control-attribution a { color: var(--accent) !important; }

@@ -50,6 +50,8 @@ export class MapView {
     /** @type {Map<string, object>} icao24 -> entry (marker, layers, state) */
     this.entries = new Map();
     this.receiverMarker = null;
+    this.receiverPos = null;
+    this.receiverVisible = true;
 
     this.map = L.map('map', {
       center: DEFAULT_CENTER,
@@ -131,18 +133,30 @@ export class MapView {
 
   /** Place (or move/clear) the receiver marker. Pass nulls to remove it. */
   setReceiver(lat, lon) {
+    this.receiverPos =
+      Number.isFinite(lat) && Number.isFinite(lon) ? [lat, lon] : null;
+    this._renderReceiver();
+  }
+
+  /** Show or hide the receiver marker without forgetting its position. */
+  setReceiverVisible(visible) {
+    this.receiverVisible = !!visible;
+    this._renderReceiver();
+  }
+
+  _renderReceiver() {
     if (this.receiverMarker) {
       this.map.removeLayer(this.receiverMarker);
       this.receiverMarker = null;
     }
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    if (!this.receiverVisible || !this.receiverPos) return;
     const icon = L.divIcon({
       className: '',
       html: `<div class="receiver-icon">${receiverSvg()}</div>`,
       iconSize: [30, 30],
       iconAnchor: [15, 26],
     });
-    this.receiverMarker = L.marker([lat, lon], { icon, zIndexOffset: -100 })
+    this.receiverMarker = L.marker(this.receiverPos, { icon, zIndexOffset: -100 })
       .bindTooltip('Receiver', { direction: 'top', offset: [0, -20] })
       .addTo(this.map);
   }
@@ -157,8 +171,8 @@ export class MapView {
 
   /** Recentre on the receiver (or the default centre if none is set). */
   centerOnReceiver() {
-    if (this.receiverMarker) {
-      this.map.flyTo(this.receiverMarker.getLatLng(), Math.max(this.map.getZoom(), 9), {
+    if (this.receiverPos) {
+      this.map.flyTo(this.receiverPos, Math.max(this.map.getZoom(), 9), {
         duration: 0.6,
       });
     } else {

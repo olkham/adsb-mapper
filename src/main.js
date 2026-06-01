@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
   username: import.meta.env.VITE_MQTT_USERNAME || '',
   password: import.meta.env.VITE_MQTT_PASSWORD || '',
   trailAll: String(import.meta.env.VITE_TRAIL_ALL).toLowerCase() === 'true',
+  showReceiver: true,
   receiver:
     import.meta.env.VITE_STATION_LAT && import.meta.env.VITE_STATION_LON
       ? `${import.meta.env.VITE_STATION_LAT}, ${import.meta.env.VITE_STATION_LON}`
@@ -69,6 +70,7 @@ const listFilter = $('list-filter');
 
 function applyReceiver() {
   const p = parseLatLon(config.receiver);
+  map.setReceiverVisible(config.showReceiver);
   map.setReceiver(p?.lat, p?.lon);
   map.centerOnReceiver();
 }
@@ -85,6 +87,7 @@ function fillSettings() {
   $('cfg-user').value = config.username;
   $('cfg-pass').value = config.password;
   $('cfg-trail-all').checked = config.trailAll;
+  $('cfg-show-receiver').checked = config.showReceiver;
   $('cfg-receiver').value = config.receiver || '';
 }
 
@@ -120,6 +123,12 @@ $('cfg-trail-all').addEventListener('change', (e) => {
   map.setTrailAll(config.trailAll);
 });
 
+$('cfg-show-receiver').addEventListener('change', (e) => {
+  config.showReceiver = e.target.checked;
+  saveConfig(config);
+  map.setReceiverVisible(config.showReceiver);
+});
+
 $('cfg-connect').addEventListener('click', () => {
   config = {
     ...config,
@@ -128,6 +137,7 @@ $('cfg-connect').addEventListener('click', () => {
     username: $('cfg-user').value,
     password: $('cfg-pass').value,
     trailAll: $('cfg-trail-all').checked,
+    showReceiver: $('cfg-show-receiver').checked,
     receiver: $('cfg-receiver').value.trim(),
   };
   saveConfig(config);

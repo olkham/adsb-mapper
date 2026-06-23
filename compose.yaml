@@ -1,0 +1,9 @@
+services:
+  adsb-mapper:
+    build: .
+    ports:
+      - "5188:5188"
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped

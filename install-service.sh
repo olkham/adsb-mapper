@@ -27,11 +27,26 @@ if [ "${1:-}" = "uninstall" ]; then
 fi
 
 # ── Node / npm check ─────────────────────────────────────────────────────────
-if ! command -v node >/dev/null 2>&1; then
+# sudo strips the invoking user's PATH (e.g. nvm installs), so if node isn't
+# on root's PATH, resolve it from the original user's login environment.
+if command -v node >/dev/null 2>&1; then
+  NODE_BIN="$(command -v node)"
+  NPM_BIN="$(command -v npm)"
+elif [ -n "${SUDO_USER}" ]; then
+  NODE_BIN="$(su - "${SUDO_USER}" -c 'command -v node 2>/dev/null' || true)"
+  NPM_BIN="$(su - "${SUDO_USER}" -c 'command -v npm  2>/dev/null' || true)"
+fi
+
+if [ -z "${NODE_BIN}" ]; then
   echo "[ERROR] Node.js not found. Run ./install.sh first (needs Node 18+)."
   exit 1
 fi
-NPM_BIN="$(command -v npm)"
+if [ -z "${NPM_BIN}" ]; then
+  echo "[ERROR] npm not found. Ensure Node.js is properly installed."
+  exit 1
+fi
+NODE_BIN_DIR="$(dirname "${NODE_BIN}")"
+echo "Using node: ${NODE_BIN}"
 
 # ── Dependencies ─────────────────────────────────────────────────────────────
 if [ ! -d "${APP_DIR}/node_modules" ]; then
@@ -65,6 +80,8 @@ RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=${SERVICE_NAME}
+# Ensure node/npm are on PATH for the service (needed for nvm installs)
+Environment=PATH=${NODE_BIN_DIR}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # Expose .env variables to the service
 EnvironmentFile=-${APP_DIR}/.env
 

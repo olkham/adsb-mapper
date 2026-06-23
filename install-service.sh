@@ -27,14 +27,44 @@ if [ "${1:-}" = "uninstall" ]; then
 fi
 
 # ── Node / npm check ─────────────────────────────────────────────────────────
-# sudo strips the invoking user's PATH (e.g. nvm installs), so if node isn't
-# on root's PATH, resolve it from the original user's login environment.
+# sudo strips the invoking user's PATH, so node may not be visible even though
+# it works for the normal user (common with nvm). Try four strategies in order.
+NODE_BIN=""
+NPM_BIN=""
+
+# 1. System-wide install already on root's PATH
 if command -v node >/dev/null 2>&1; then
   NODE_BIN="$(command -v node)"
   NPM_BIN="$(command -v npm)"
-elif [ -n "${SUDO_USER}" ]; then
-  NODE_BIN="$(su - "${SUDO_USER}" -c 'command -v node 2>/dev/null' || true)"
-  NPM_BIN="$(su - "${SUDO_USER}" -c 'command -v npm  2>/dev/null' || true)"
+fi
+
+# 2. Source nvm.sh directly from the invoking user's home (most common case)
+if [ -z "${NODE_BIN}" ] && [ -n "${SUDO_USER}" ]; then
+  USER_HOME="$(eval echo ~"${SUDO_USER}")"
+  NVM_SH="${USER_HOME}/.nvm/nvm.sh"
+  if [ -s "${NVM_SH}" ]; then
+    export NVM_DIR="${USER_HOME}/.nvm"
+    # shellcheck disable=SC1090
+    \. "${NVM_SH}" --no-use 2>/dev/null || true
+    NODE_BIN="$(command -v node 2>/dev/null || true)"
+    NPM_BIN="$(command -v npm  2>/dev/null || true)"
+  fi
+fi
+
+# 3. Scan the nvm versions directory for the highest installed version
+if [ -z "${NODE_BIN}" ] && [ -n "${SUDO_USER}" ]; then
+  USER_HOME="$(eval echo ~"${SUDO_USER}")"
+  NVM_VERS="${USER_HOME}/.nvm/versions/node"
+  if [ -d "${NVM_VERS}" ]; then
+    NODE_BIN="$(find "${NVM_VERS}" -name "node" -type f 2>/dev/null | sort -V | tail -1)"
+    NPM_BIN="$(find "${NVM_VERS}" -name "npm"  -type f 2>/dev/null | sort -V | tail -1)"
+  fi
+fi
+
+# 4. Login shell fallback (works when node is in .profile / .bash_profile)
+if [ -z "${NODE_BIN}" ] && [ -n "${SUDO_USER}" ]; then
+  NODE_BIN="$(su - "${SUDO_USER}" -c 'command -v node 2>/dev/null' 2>/dev/null || true)"
+  NPM_BIN="$(su - "${SUDO_USER}" -c 'command -v npm  2>/dev/null' 2>/dev/null || true)"
 fi
 
 if [ -z "${NODE_BIN}" ]; then

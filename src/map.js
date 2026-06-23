@@ -19,6 +19,125 @@ function planeSvg(colorCss) {
   </svg>`;
 }
 
+function helicopterSvg(colorCss) {
+  // Top-down helicopter pointing north. Main rotor = large cross centred on
+  // fuselage; tail boom extends south with a perpendicular tail rotor (+--X).
+  return `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- main rotor blades (behind fuselage, 45° × shape) -->
+    <line x1="5" y1="2" x2="19" y2="16" stroke="${colorCss}" stroke-width="1.6" stroke-linecap="round"/>
+    <line x1="19" y1="2" x2="5" y2="16" stroke="${colorCss}" stroke-width="1.6" stroke-linecap="round"/>
+    <!-- fuselage (narrow teardrop, nose at top) -->
+    <ellipse cx="12" cy="10" rx="2.2" ry="5.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/>
+    <!-- tail boom -->
+    <line x1="12" y1="15.5" x2="12" y2="21" stroke="${colorCss}" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- tail rotor -->
+    <line x1="9" y1="21" x2="15" y2="21" stroke="${colorCss}" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function gliderSvg(colorCss) {
+  // Glider/sailplane: slender fuselage + high-aspect swept wings, pointing north.
+  return `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2 L12.8 10 L22 14 L21 15 L12.8 12 L13 19 L15 20 L15 21 L12 20.5 L9 21 L9 20 L11 19 L11.2 12 L3 15 L2 14 L11.2 10 Z"
+      fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function balloonSvg(colorCss) {
+  // Lighter-than-air: balloon envelope + basket.
+  return `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- envelope -->
+    <ellipse cx="12" cy="10" rx="7" ry="8.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.7"/>
+    <!-- lines to basket -->
+    <line x1="8" y1="17.5" x2="9.5" y2="20" stroke="rgba(0,0,0,0.6)" stroke-width="0.8"/>
+    <line x1="16" y1="17.5" x2="14.5" y2="20" stroke="rgba(0,0,0,0.6)" stroke-width="0.8"/>
+    <!-- basket -->
+    <rect x="9.5" y="20" width="5" height="3" rx="0.6" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/>
+  </svg>`;
+}
+
+function uavSvg(colorCss) {
+  // UAV/drone: quad-rotor X-frame silhouette.
+  return `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- arms -->
+    <line x1="12" y1="12" x2="4"  y2="4"  stroke="${colorCss}" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="12" y1="12" x2="20" y2="4"  stroke="${colorCss}" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="12" y1="12" x2="4"  y2="20" stroke="${colorCss}" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="12" y1="12" x2="20" y2="20" stroke="${colorCss}" stroke-width="1.8" stroke-linecap="round"/>
+    <!-- motor blobs -->
+    <circle cx="4"  cy="4"  r="2.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/>
+    <circle cx="20" cy="4"  r="2.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/>
+    <circle cx="4"  cy="20" r="2.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/>
+    <circle cx="20" cy="20" r="2.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/>
+    <!-- centre body -->
+    <circle cx="12" cy="12" r="2.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/>
+  </svg>`;
+}
+
+function parachutistSvg(colorCss) {
+  // Parachutist: canopy arc + figure.
+  return `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- canopy -->
+    <path d="M4 12 Q4 3 12 3 Q20 3 20 12 Z" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.7"/>
+    <!-- lines -->
+    <line x1="7"  y1="12" x2="12" y2="17" stroke="rgba(0,0,0,0.6)" stroke-width="0.7"/>
+    <line x1="12" y1="12" x2="12" y2="17" stroke="rgba(0,0,0,0.6)" stroke-width="0.7"/>
+    <line x1="17" y1="12" x2="12" y2="17" stroke="rgba(0,0,0,0.6)" stroke-width="0.7"/>
+    <!-- figure -->
+    <circle cx="12" cy="17.5" r="1.5" fill="${colorCss}" stroke="rgba(0,0,0,0.5)" stroke-width="0.5"/>
+    <line x1="12" y1="19" x2="12" y2="22" stroke="${colorCss}" stroke-width="1.2" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function groundVehicleSvg(colorCss) {
+  // Surface vehicle: simple top-down car silhouette.
+  return `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <rect x="7" y="4" width="10" height="16" rx="2.5" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.7"/>
+    <rect x="8.5" y="5.5" width="7" height="5" rx="1" fill="rgba(0,0,0,0.25)"/>
+    <circle cx="8"  cy="6"  r="1.4" fill="rgba(0,0,0,0.45)"/>
+    <circle cx="16" cy="6"  r="1.4" fill="rgba(0,0,0,0.45)"/>
+    <circle cx="8"  cy="18" r="1.4" fill="rgba(0,0,0,0.45)"/>
+    <circle cx="16" cy="18" r="1.4" fill="rgba(0,0,0,0.45)"/>
+  </svg>`;
+}
+
+function obstacleMarkerSvg(colorCss) {
+  // Point/cluster/line obstacle: diamond warning shape.
+  return `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="12,2 22,12 12,22 2,12" fill="${colorCss}" stroke="rgba(0,0,0,0.55)" stroke-width="0.7"/>
+    <line x1="12" y1="8" x2="12" y2="15" stroke="rgba(0,0,0,0.7)" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="12" cy="18" r="1.2" fill="rgba(0,0,0,0.7)"/>
+  </svg>`;
+}
+
+/**
+ * Choose the appropriate SVG icon based on ADS-B emitter category.
+ * Category is a two-character string like "A7", "B2", etc.
+ */
+export function iconSvgForCategory(category, colorCss) {
+  if (!category || category.length < 2) return planeSvg(colorCss);
+  const set = category[0].toUpperCase();
+  const num = parseInt(category[1], 10);
+  if (set === 'A') {
+    if (num === 7) return helicopterSvg(colorCss);            // Rotorcraft
+    return planeSvg(colorCss);                                // A1–A6 all fixed-wing
+  }
+  if (set === 'B') {
+    if (num === 1) return gliderSvg(colorCss);                // Glider/sailplane
+    if (num === 2) return balloonSvg(colorCss);               // Lighter-than-air
+    if (num === 3) return parachutistSvg(colorCss);           // Parachutist
+    if (num === 4) return gliderSvg(colorCss);                // Ultralight/hang-glider/paraglider
+    if (num === 6) return uavSvg(colorCss);                   // UAV
+    return planeSvg(colorCss);                                // B0, B5, B7
+  }
+  if (set === 'C') {
+    if (num === 1 || num === 2) return groundVehicleSvg(colorCss); // Surface vehicles
+    if (num >= 3 && num <= 5)   return obstacleMarkerSvg(colorCss); // Obstacles
+    return planeSvg(colorCss);
+  }
+  return planeSvg(colorCss);
+}
+
 function receiverSvg() {
   // Antenna mast with signal arcs.
   return `<svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
@@ -41,11 +160,13 @@ function centerIconSvg() {
 }
 
 export class MapView {
-  constructor(store, { onSelect } = {}) {
+  constructor(store, { onSelect, onTrackRelease } = {}) {
     this.store = store;
     this.onSelect = onSelect;
+    this.onTrackRelease = onTrackRelease;
     this.trailAll = false;
     this.selected = null;
+    this.trackedIcao = null;
 
     /** @type {Map<string, object>} icao24 -> entry (marker, layers, state) */
     this.entries = new Map();
@@ -129,6 +250,11 @@ export class MapView {
   setTrailAll(v) {
     this.trailAll = v;
     for (const ac of this.store.all()) this._renderTrack(ac, true);
+  }
+
+  /** Start/stop following an aircraft. Pass null to release. */
+  setTracking(icao24) {
+    this.trackedIcao = icao24 || null;
   }
 
   /** Place (or move/clear) the receiver marker. Pass nulls to remove it. */
@@ -221,6 +347,10 @@ export class MapView {
     if (e.predLine) this.map.removeLayer(e.predLine);
     this.entries.delete(icao24);
     if (this.selected === icao24) this.select(null);
+    if (this.trackedIcao === icao24) {
+      this.trackedIcao = null;
+      this.onTrackRelease?.(icao24);
+    }
   }
 
   // ── Icon ────────────────────────────────────────────────────────────────────
@@ -243,10 +373,11 @@ export class MapView {
     const h = Number.isFinite(heading) ? heading : 0;
     const label = ac.fields.callsign || ac.icao24;
     const cls = selected ? 'plane-icon selected' : 'plane-icon';
+    const iconSvg = iconSvgForCategory(ac.fields.category, colorCss);
     return L.divIcon({
       className: '',
       html:
-        `<div class="${cls}" style="transform: rotate(${h}deg)">${planeSvg(colorCss)}</div>` +
+        `<div class="${cls}" style="transform: rotate(${h}deg)">${iconSvg}</div>` +
         `<span class="plane-label">${escapeHtml(label)}</span>`,
       iconSize: [24, 24],
       iconAnchor: [12, 12],
@@ -262,7 +393,8 @@ export class MapView {
     const colorCss = stale ? rgbCss(STALE_RGB) : rgbCss(this._colorOf(ac));
     const selected = this.selected === ac.icao24;
     const label = ac.fields.callsign || ac.icao24;
-    const key = `${colorCss}|${selected ? 1 : 0}|${label}`;
+    const category = ac.fields.category || '';
+    const key = `${colorCss}|${selected ? 1 : 0}|${label}|${category}`;
 
     if (e.appearanceKey !== key) {
       const heading = this._headingOf(ac);
@@ -412,6 +544,11 @@ export class MapView {
 
         // Keep colour/staleness/label/selection in sync.
         this._updateAppearance(ac, e);
+
+        // If this aircraft is being tracked, pan the map to its current pos.
+        if (this.trackedIcao === icao24) {
+          this.map.panTo([pos.lat, pos.lon], { animate: true, duration: 0.3, noMoveStart: true });
+        }
 
         // Cheap rotation update directly on the DOM (skip when unknown).
         const heading = this._headingOf(ac);

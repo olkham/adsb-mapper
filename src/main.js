@@ -5,6 +5,7 @@ import { AircraftStore } from './store.js';
 import { AdsbMqtt } from './mqtt.js';
 import { MapView } from './map.js';
 import { rgbCss, altitudeRGB } from './geo.js';
+import { iconSvgForCategory } from './map.js';
 
 const CONFIG_KEY = 'adsb-mapper.config';
 
@@ -52,9 +53,21 @@ function saveConfig(cfg) {
 // ── State ─────────────────────────────────────────────────────────────────────
 let config = loadConfig();
 let mqttClient = null;
+let trackedIcao = null;
+
+function setTracked(icao24) {
+  trackedIcao = icao24 || null;
+  map.setTracking(trackedIcao);
+  renderList();
+}
 
 const store = new AircraftStore();
-const map = new MapView(store, { onSelect: handleSelect });
+const map = new MapView(store, {
+  onSelect: handleSelect,
+  onTrackRelease: (icao24) => {
+    if (trackedIcao === icao24) setTracked(null);
+  },
+});
 map.setTrailAll(config.trailAll);
 applyReceiver();
 
@@ -103,6 +116,31 @@ function closeSettings() {
 $('settings-btn').addEventListener('click', openSettings);
 $('cfg-cancel').addEventListener('click', closeSettings);
 $('cfg-close').addEventListener('click', closeSettings);
+
+// Build legend icons from the same SVG functions used on the map
+const LEGEND_ICON_ITEMS = [
+  { category: 'A1', label: '<strong>Fixed-wing</strong>', desc: 'A1 Light &bull; A2 Small &bull; A3 Large &bull; A4 High-vortex &bull; A5 Heavy &bull; A6 High-perf' },
+  { category: 'A7', label: '<strong>Helicopter / Rotorcraft</strong>', desc: 'A7' },
+  { category: 'B1', label: '<strong>Glider / Ultralight</strong>', desc: 'B1 &bull; B4' },
+  { category: 'B2', label: '<strong>Balloon / Airship</strong>', desc: 'B2 Lighter-than-air' },
+  { category: 'B3', label: '<strong>Parachutist</strong>', desc: 'B3' },
+  { category: 'B6', label: '<strong>UAV / Drone</strong>', desc: 'B6' },
+  { category: 'C1', label: '<strong>Surface vehicle</strong>', desc: 'C1 Emergency &bull; C2 Service' },
+  { category: 'C3', label: '<strong>Obstacle</strong>', desc: 'C3 Point &bull; C4 Cluster &bull; C5 Line' },
+];
+$('legend-icons').innerHTML = LEGEND_ICON_ITEMS.map(({ category, label, desc }) => {
+  const svg = iconSvgForCategory(category, '#38bdf8').replace(/width="24"/, 'width="22"').replace(/height="24"/, 'height="22"');
+  return `<div class="legend-icon-row">${svg}<span>${label} \u2014 ${desc}</span></div>`;
+}).join('');
+
+// Legend toggle
+const legendBtn = $('legend-btn');
+const legendPanel = $('legend-panel');
+legendBtn.addEventListener('click', () => {
+  const open = legendPanel.classList.toggle('open');
+  legendPanel.classList.toggle('hidden', false); // remove hidden so transition works
+  legendBtn.classList.toggle('active', open);
+});
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !settingsPanel.classList.contains('hidden')) closeSettings();
@@ -179,6 +217,13 @@ function connect() {
 // Remove stale aircraft periodically.
 setInterval(() => store.sweep(120000), 15000);
 
+// Release tracking when the tracked aircraft goes stale.
+setInterval(() => {
+  if (!trackedIcao) return;
+  const ac = store.get(trackedIcao);
+  if (!ac || Date.now() - ac.lastUpdate > STALE_MS) setTracked(null);
+}, 5000);
+
 // Keep the selected aircraft's info panel fresh.
 setInterval(() => {
   if (map.selected) {
@@ -225,11 +270,17 @@ function renderList() {
       const spd = Number.isFinite(f.ground_speed_kt) ? `${Math.round(f.ground_speed_kt)}kt` : '';
       const sel = map.selected === ac.icao24 ? ' selected' : '';
       const st = stale ? ' stale' : '';
+      const tracked = trackedIcao === ac.icao24;
+      const trackTitle = tracked ? 'Stop tracking' : 'Track aircraft';
+      const trackActive = tracked ? ' active' : '';
       return (
         `<div class="list-row${sel}${st}" data-icao="${ac.icao24}">` +
         `<span class="row-dot" style="background:${rgbCss(rgb)}"></span>` +
         `<span class="row-call">${escapeHtml(f.callsign || ac.icao24)}</span>` +
         `<span class="row-meta">${alt} ${spd}</span>` +
+        `<button class="row-track${trackActive}" data-track-icao="${ac.icao24}" title="${trackTitle}">` +
+        `<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="5.5"/><line x1="8" y1="1" x2="8" y2="3.5"/><line x1="8" y1="12.5" x2="8" y2="15"/><line x1="1" y1="8" x2="3.5" y2="8"/><line x1="12.5" y1="8" x2="15" y2="8"/></svg>` +
+        `</button>` +
         `</div>`
       );
     })
@@ -237,6 +288,14 @@ function renderList() {
 }
 
 aircraftList.addEventListener('click', (e) => {
+  // Track button takes priority.
+  const trackBtn = e.target.closest('.row-track');
+  if (trackBtn) {
+    e.stopPropagation();
+    const icao = trackBtn.dataset.trackIcao;
+    setTracked(trackedIcao === icao ? null : icao);
+    return;
+  }
   const row = e.target.closest('.list-row');
   if (!row) return;
   const icao = row.dataset.icao;

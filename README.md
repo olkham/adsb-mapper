@@ -153,7 +153,105 @@ baked in at build time, so rebuild after changing `.env`.
 
 ---
 
-## 7. Command reference
+## 7. Run as a service
+
+The install scripts register ADS-B Mapper as an OS service so it starts
+automatically at boot and restarts on failure.
+
+### Linux (systemd)
+
+**Prerequisite:** a Linux system running systemd (Debian, Ubuntu, Raspberry Pi OS,
+Fedora, etc.).
+
+```bash
+sudo ./install-service.sh            # install and start
+sudo ./install-service.sh uninstall  # remove
+```
+
+The service runs as the user who called `sudo` (not root) and loads `.env`
+automatically.
+
+| Action | Command |
+|--------|---------|
+| Status | `systemctl status adsb-mapper` |
+| Logs (live) | `journalctl -u adsb-mapper -f` |
+| Stop | `systemctl stop adsb-mapper` |
+| Start | `systemctl start adsb-mapper` |
+| Restart | `systemctl restart adsb-mapper` |
+| Remove | `sudo ./install-service.sh uninstall` |
+
+### Windows (NSSM)
+
+**Prerequisite:** [NSSM](https://nssm.cc) on your `PATH`:
+
+```bat
+winget install nssm
+```
+
+Then, in an **Administrator** command prompt:
+
+```bat
+install-service.bat            :: install and start
+install-service.bat uninstall  :: remove
+```
+
+Service logs are written to `logs\service-stdout.log` and
+`logs\service-stderr.log` in the project folder.
+
+| Action | Command |
+|--------|---------|
+| Status | `sc query adsb-mapper` |
+| Stop | `sc stop adsb-mapper` |
+| Start | `sc start adsb-mapper` |
+| Remove | `install-service.bat uninstall` *(as Administrator)* |
+
+### Updating the app when installed as a service
+
+1. **Stop the service** so the dev server releases its port:
+
+   ```bash
+   # Linux
+   sudo systemctl stop adsb-mapper
+   ```
+
+   ```bat
+   :: Windows (Administrator)
+   sc stop adsb-mapper
+   ```
+
+2. **Pull the latest code** (or copy in new files):
+
+   ```bash
+   git pull
+   ```
+
+3. **Update dependencies** if `package.json` changed:
+
+   ```bash
+   npm install
+   ```
+
+4. **Edit `.env`** if any new environment variables were added (compare with
+   `.env.example`).
+
+5. **Restart the service:**
+
+   ```bash
+   # Linux
+   sudo systemctl start adsb-mapper
+   ```
+
+   ```bat
+   :: Windows (Administrator)
+   sc start adsb-mapper
+   ```
+
+> **Tip:** If you change `.env` while the service is running, restart it — Vite
+> reads env vars only at startup.
+
+---
+
+## 8. Command reference
 
 | Action | Windows | Linux/macOS | npm |
 |--------|---------|-------------|-----|
@@ -161,12 +259,14 @@ baked in at build time, so rebuild after changing `.env`.
 | Start (dev) | `start.bat` | `./start.sh` | `npm start` |
 | Start + set broker | `start.bat ws://host:9001` | `./start.sh ws://host:9001` | — |
 | Stop | `Ctrl+C` | `Ctrl+C` | `Ctrl+C` |
+| Install as service | `install-service.bat` *(Admin)* | `sudo ./install-service.sh` | — |
+| Remove service | `install-service.bat uninstall` *(Admin)* | `sudo ./install-service.sh uninstall` | — |
 | Build | — | — | `npm run build` |
 | Preview build | — | — | `npm run preview` |
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
@@ -175,6 +275,9 @@ baked in at build time, so rebuild after changing `.env`.
 | Changed `.env` but nothing happened | Restart the server, and click **Reset** in ⚙ to clear saved browser settings. |
 | `node` / `npm` not found | Install Node.js 18+ from <https://nodejs.org/>. |
 | Port 5188 in use | Edit `server.port` in [`vite.config.js`](./vite.config.js). |
+| Service fails to start (Linux) | Check logs: `journalctl -u adsb-mapper -n 50`. Ensure `node_modules` exists and `.env` is present. |
+| Service fails to start (Windows) | Check `logs\service-stderr.log`. Ensure NSSM is on `PATH` and the script was run as Administrator. |
+| App not updated after `git pull` | Restart the service after pulling — see [§7 Updating](#updating-the-app-when-installed-as-a-service). |
 
 ---
 

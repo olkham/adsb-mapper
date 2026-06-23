@@ -81,7 +81,16 @@ echo "Using node: ${NODE_BIN}"
 # ── Dependencies ─────────────────────────────────────────────────────────────
 if [ ! -d "${APP_DIR}/node_modules" ]; then
   echo "Installing npm dependencies..."
-  npm install
+  "${NPM_BIN}" install
+fi
+
+# Locate vite's JS entry point so we can run it with node directly (more
+# reliable in systemd than invoking npm, which needs HOME, a shell, etc.)
+VITE_JS="${APP_DIR}/node_modules/vite/bin/vite.js"
+if [ ! -f "${VITE_JS}" ]; then
+  echo "[ERROR] Vite not found at ${VITE_JS}."
+  echo "        Run: npm install"
+  exit 1
 fi
 
 # ── Determine run-as user ────────────────────────────────────────────────────
@@ -89,8 +98,7 @@ fi
 RUN_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "$USER")}"
 if [ -z "$RUN_USER" ] || [ "$RUN_USER" = "root" ]; then
   RUN_USER="nobody"
-fi
-
+fiRUN_USER_HOME="$(eval echo ~"${RUN_USER}" 2>/dev/null || echo "/home/${RUN_USER}")"
 # ── Write systemd unit ───────────────────────────────────────────────────────
 echo "Writing ${UNIT_FILE} ..."
 cat > "${UNIT_FILE}" <<EOF
@@ -104,14 +112,16 @@ Wants=network-online.target
 Type=simple
 User=${RUN_USER}
 WorkingDirectory=${APP_DIR}
-ExecStart=${NPM_BIN} run dev
+# Call node directly with vite's JS entry – avoids npm's shell-script chain
+# which requires HOME, a login shell, and more PATH resolution.
+ExecStart=${NODE_BIN} ${VITE_JS}
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=${SERVICE_NAME}
-# Ensure node/npm are on PATH for the service (needed for nvm installs)
 Environment=PATH=${NODE_BIN_DIR}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=HOME=${RUN_USER_HOME}
 # Expose .env variables to the service
 EnvironmentFile=-${APP_DIR}/.env
 

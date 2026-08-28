@@ -182,8 +182,12 @@ export class MapView {
       preferCanvas: true,
     });
 
+    // CARTO basemaps now require an API key, appended as a ?key= query param.
+    const cartoKey = import.meta.env.VITE_CARTO_API_KEY || '';
+    const cartoKeyParam = cartoKey ? `?key=${cartoKey}` : '';
+
     const dark = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${cartoKeyParam}`,
       {
         maxZoom: 19,
         attribution:
@@ -191,7 +195,7 @@ export class MapView {
       }
     );
     const light = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${cartoKeyParam}`,
       {
         maxZoom: 19,
         className: 'light-tiles',
